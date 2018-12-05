@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>RTCRtpSender.transport</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="dictionary-helper.js"></script>
+<script src="RTCPeerConnection-helper.js"></script>
+<script>
+  'use strict';
+
+  // Spec link: http://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-transport
+  promise_test(async t => {
+      const pc = new RTCPeerConnection();
+      t.add_cleanup(() => pc.close());
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      t.add_cleanup(() => stream.getTracks().forEach(track => track.stop()));
+      const [track] = stream.getTracks();
+      const sender = pc.addTrack(track);
+      assert_equals(sender.transport, null);
+  }, 'RTCRtpSender.transport is null when unconnected');
+
+  promise_test(async t => {
+      const pc = new RTCPeerConnection();
+      t.add_cleanup(() => pc.close());
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      t.add_cleanup(() => stream.getTracks().forEach(track => track.stop()));
+      const [track] = stream.getTracks();
+      const sender = pc.addTrack(track);
+      const pc2 = new RTCPeerConnection();
+      t.add_cleanup(() => pc2.close());
+      exchangeIceCandidates(pc, pc2);
+      await exchangeOfferAndListenToOntrack(t, pc, pc2);
+      assert_not_equals(sender.transport, null);
+      const [transceiver] = pc.getTransceivers();
+      assert_equals(transceiver.sender.transport,
+                    transceiver.receiver.transport);
+  }, 'RTCRtpSender/receiver.transport has a value when connected');
+ </script>
